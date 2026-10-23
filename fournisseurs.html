@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fournisseurs de bois de chauffage & granulés | WoodEnergy</title>
+  <meta name="description" content="Annuaire des fournisseurs de bois de chauffage, granulés et bois densifié en France. Filtrez par code postal, type de bois et conditionnement." />
+  <link rel="canonical" href="https://www.woodenergy.fr/fournisseurs.html" />
+  <meta name="robots" content="index,follow" />
+  <meta name="author" content="WoodEnergy" />
+  <meta name="theme-color" content="#5b3a1e" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="WoodEnergy" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:title" content="Fournisseurs de bois de chauffage & granulés | WoodEnergy" />
+  <meta property="og:description" content="Annuaire des fournisseurs de bois de chauffage, granulés et bois densifié en France. Filtrez par code postal, type de bois et conditionnement." />
+  <meta property="og:url" content="https://www.woodenergy.fr/fournisseurs.html" />
+  <meta property="og:image" content="https://www.woodenergy.fr/images/buches.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Fournisseurs de bois de chauffage & granulés | WoodEnergy" />
+  <meta name="twitter:description" content="Annuaire des fournisseurs de bois de chauffage, granulés et bois densifié en France. Filtrez par code postal, type de bois et conditionnement." />
+  <meta name="twitter:image" content="https://www.woodenergy.fr/images/buches.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="images/hero.jpg" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="app.css" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Accueil",
+      "item": "https://www.woodenergy.fr/index.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Fournisseurs",
+      "item": "https://www.woodenergy.fr/fournisseurs.html"
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+
+<header class="header">
+  <div class="container nav">
+    <a href="index.html" class="logo"><span class="logo-mark">WE</span><span class="logo-text">Wood<strong>Energy</strong></span></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="index.html">Accueil</a>
+      <a href="fournisseurs.html" class="active">Fournisseurs</a>
+      <a href="tarifs.html">Tarifs</a>
+      <div class="nav-drop"><a href="articles.html">Blog</a><div class="nav-drop-menu">
+        <a href="articles.html">Tous les articles</a>
+        <a href="conseils.html">Guide du bois de chauffage</a>
+        <a href="faq.html">Questions fréquentes</a>
+      </div></div>
+      <div class="nav-drop"><a href="calculateur.html">Outils</a><div class="nav-drop-menu">
+        <a href="calculateur.html">Calculateur de besoin<small>Combien de stères ou de sacs ?</small></a>
+        <a href="devis.html">Devis gratuit<small>En 4 étapes, sans engagement</small></a>
+        <a href="comparateur.html">Comparateur<small>Comparez jusqu'à 3 fournisseurs</small></a>
+        <a href="carte.html">Carte des fournisseurs<small>Trouvez le plus proche</small></a>
+      </div></div>
+      <a href="avis.html">Avis</a>
+      <a href="contact.html">Contact</a>
+      <a href="devis.html" class="nav-panel-cta">Devis gratuit</a>
+    </nav>
+    <a href="panier.html" class="cart-btn" id="cartBtn" aria-label="Mon panier" title="Mon panier">
+      <span class="cart-ico" aria-hidden="true">🛒</span>
+      <span class="cart-count" id="cartCount" hidden>0</span>
+    </a>
+    <a href="devis.html" class="btn btn-primary nav-cta">Devis gratuit</a>
+    <button class="burger" id="burger" type="button" aria-label="Ouvrir le menu" aria-controls="navLinks" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="page-hero ">
+  <div class="container">
+    <p class="breadcrumb"><a href="index.html">Accueil</a> / Fournisseurs</p>
+    <h1>Trouvez votre fournisseur de bois</h1>
+    <p>Comparez les fournisseurs de bûches, granulés et bois densifié partout en France : zones de livraison, prix de départ, notes clients et certifications.</p>
+  </div>
+</section><section class="section" id="liste">
+  <div class="container"><form class="filter-bar" id="filterForm">
+      <div class="field"><label for="fCp">Code postal</label><input type="text" id="fCp" name="cp" inputmode="numeric" maxlength="5" placeholder="Ex : 69000" /></div>
+      <div class="field"><label for="fType">Type de bois</label><select id="fType" name="type"><option value="">Tous les types</option><option>Bûches de bois</option><option>Granulés / Pellets</option><option>Bois densifié</option><option>Plaquettes</option><option>Transport</option></select></div>
+      <div class="field"><label for="fCond">Conditionnement</label><select id="fCond" name="cond"><option value="">Tous</option><option>Vrac</option><option>Sac / palette</option></select></div>
+      <div class="field"><label for="fSort">Trier par</label><select id="fSort" name="sort"><option value="">Tri par défaut</option><option value="prix">Prix croissant</option><option value="note">Meilleures notes</option><option value="avis">Plus d'avis</option></select></div>
+      <button type="submit" class="btn btn-primary">Filtrer</button>
+    </form>
+    <p class="search-note" id="filterNote" role="status"></p>
+    <p class="muted" id="supplierCount" aria-live="polite" style="margin:.4rem 0 1rem"></p>
+    <div class="suppliers" id="supplierList"></div>
+  </div>
+</section><section class="section section-alt">
+  <div class="container"><header class="section-head"><p class="eyebrow">Par ville</p><h2>Fournisseurs près de chez vous</h2><p class="muted center" style="max-width:60ch;margin:.6rem auto 0">Parcourez nos pages locales pour trouver un fournisseur dans votre ville.</p></header><div class="city-grid"><a class="city-card" href="ville-lyon.html"><div class="cy-ico">📍</div><h3>Lyon</h3><p>Rhône (69)</p></a><a class="city-card" href="ville-grenoble.html"><div class="cy-ico">📍</div><h3>Grenoble</h3><p>Isère (38)</p></a><a class="city-card" href="ville-clermont-ferrand.html"><div class="cy-ico">📍</div><h3>Clermont-Ferrand</h3><p>Puy-de-Dôme (63)</p></a><a class="city-card" href="ville-saint-etienne.html"><div class="cy-ico">📍</div><h3>Saint-Étienne</h3><p>Loire (42)</p></a><a class="city-card" href="ville-paris.html"><div class="cy-ico">📍</div><h3>Paris</h3><p>Paris (75)</p></a><a class="city-card" href="ville-marseille.html"><div class="cy-ico">📍</div><h3>Marseille</h3><p>Bouches-du-Rhône (13)</p></a><a class="city-card" href="ville-bordeaux.html"><div class="cy-ico">📍</div><h3>Bordeaux</h3><p>Gironde (33)</p></a><a class="city-card" href="ville-lille.html"><div class="cy-ico">📍</div><h3>Lille</h3><p>Nord (59)</p></a><a class="city-card" href="ville-toulouse.html"><div class="cy-ico">📍</div><h3>Toulouse</h3><p>Haute-Garonne (31)</p></a><a class="city-card" href="ville-nantes.html"><div class="cy-ico">📍</div><h3>Nantes</h3><p>Loire-Atlantique (44)</p></a><a class="city-card" href="ville-strasbourg.html"><div class="cy-ico">📍</div><h3>Strasbourg</h3><p>Bas-Rhin (67)</p></a><a class="city-card" href="ville-rennes.html"><div class="cy-ico">📍</div><h3>Rennes</h3><p>Ille-et-Vilaine (35)</p></a></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container" style="padding-bottom:1.5rem">
+    <div class="newsletter" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)">
+      <div>
+        <h3 style="color:#fff">Newsletter bois &amp; prix</h3>
+        <p style="color:#cdbda4">Recevez nos conseils et l'évolution des prix du bois en début de saison. Un e-mail par trimestre, pas plus.</p>
+      </div>
+      <form class="js-form" data-save="newsletter" data-success="Merci ! Vous êtes inscrit à la newsletter WoodEnergy." novalidate>
+        <input type="email" name="email" required placeholder="vous@exemple.fr" aria-label="Votre e-mail" />
+        <button class="btn btn-primary" type="submit">Je m'inscris</button>
+        <p class="form-note" role="status" style="width:100%;text-align:left"></p>
+      </form>
+    </div>
+  </div>
+  <div class="container footer-grid">
+    <div>
+      <a href="index.html" class="logo logo-light"><span class="logo-mark">WE</span><span class="logo-text">Wood<strong>Energy</strong></span></a>
+      <p class="muted">Bois de chauffage &amp; énergie, livrés chez vous. Annuaire de fournisseurs, conseils et outils pour chauffer moins cher.</p>
+      <p class="muted">Suivez-nous : <a href="#">Facebook</a> · <a href="#">Instagram</a> · <a href="#">LinkedIn</a></p>
+      <p class="muted">Contact : <a href="tel:+33744278770">+33 7 44 27 87 70</a> · <a href="mailto:EnergyWood@gmail.com">EnergyWood@gmail.com</a> · <a href="https://wa.me/33744278770?text=Bonjour%2C%20je%20souhaite%20un%20devis%20pour%20du%20bois%20de%20chauffage." target="_blank" rel="noopener">WhatsApp</a></p>
+    </div>
+    <div><h4>Produits</h4><ul>
+      <li><a href="fournisseurs.html?type=B%C3%BBches%20de%20bois">Bûches de bois</a></li>
+      <li><a href="fournisseurs.html?type=Granul%C3%A9s%20%2F%20Pellets">Granulés / Pellets</a></li>
+      <li><a href="fournisseurs.html?type=Bois%20densifi%C3%A9">Bois densifié</a></li>
+      <li><a href="fournisseurs.html?type=Plaquettes">Plaquettes</a></li>
+      <li><a href="tarifs.html">Tarifs &amp; budget</a></li>
+    </ul></div>
+    <div><h4>Outils</h4><ul>
+      <li><a href="calculateur.html">Calculateur de besoin</a></li>
+      <li><a href="devis.html">Devis gratuit</a></li>
+      <li><a href="comparateur.html">Comparateur</a></li>
+      <li><a href="carte.html">Carte des fournisseurs</a></li>
+      <li><a href="faq.html">Questions fréquentes</a></li>
+    </ul></div>
+    <div><h4>Le site</h4><ul>
+      <li><a href="articles.html">Blog &amp; conseils</a></li>
+      <li><a href="avis.html">Avis clients</a></li>
+      <li><a href="pro.html">Espace professionnels</a></li>
+      <li><a href="panier.html">Mon panier</a></li>
+      <li><a href="compte.html">Mon compte</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="plan-du-site.html">Plan du site</a></li>
+    </ul></div>
+  </div>
+  <div class="container copyright">
+    <p style="margin-bottom:.5rem">
+      <a href="mentions.html">Mentions légales</a> ·
+      <a href="cgv.html">CGV</a> ·
+      <a href="confidentialite.html">Confidentialité</a> ·
+      <a href="cookies.html">Cookies</a> ·
+      <a href="mentions.html#credits">Crédits images</a>
+    </p>
+    <p>© <span id="year"></span> WoodEnergy. Tous droits réservés. Site de démonstration — prix et fournisseurs indicatifs.</p>
+  </div>
+</footer>
+
+<div class="cookie-banner" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Préférences de cookies">
+  <p>🍪 Ce site n'utilise que des cookies techniques nécessaires à son fonctionnement (mémorisation de vos filtres et favoris). Aucun cookie publicitaire. <a href="cookies.html">En savoir plus</a>.</p>
+  <div class="cb-actions">
+    <button class="btn btn-ghost" id="cookieNo" style="color:#fff;border-color:#8a6d4b">Refuser le non-essentiel</button>
+    <button class="btn btn-primary" id="cookieOk">Accepter</button>
+  </div>
+</div>
+
+<div class="cart-drawer" id="cartDrawer" hidden>
+  <div class="cart-overlay" data-close="1"></div>
+  <aside class="cart-panel" role="dialog" aria-modal="true" aria-label="Mon panier">
+    <header class="cart-head">
+      <h2>Mon panier</h2>
+      <button type="button" class="cart-x" data-close="1" aria-label="Fermer le panier">&times;</button>
+    </header>
+    <div class="cart-lines" id="cartDrawerLines"></div>
+    <footer class="cart-foot" id="cartDrawerFoot"></footer>
+  </aside>
+</div>
+
+<script src="data/fournisseurs.js"></script>
+<script src="script.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
