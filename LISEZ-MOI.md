@@ -44,16 +44,18 @@ enregistrer une commande de démonstration (`we_orders`) ou convertir le panier 
 demande de devis (`we_quotes`). Pour changer les paliers, modifiez `TIERS` dans
 `build.py` puis relancez le générateur.
 
-## Devis envoyé sur WhatsApp
-À l'envoi d'une demande de devis (`devis.html`, formulaire de `index.html` et de
-`contact.html`), le récapitulatif est transmis à WhatsApp : le site ouvre
-`https://wa.me/33744278770` dans un nouvel onglet avec le message déjà rédigé
-(type de bois, quantité, prix estimé, code postal, coordonnées, précisions).
-Il ne reste au client qu'à appuyer sur « Envoyer » dans WhatsApp.
-Le numéro est défini une seule fois dans `app.js` (`WA_PHONE`) : changez-le à cet
-endroit pour basculer sur un autre compte WhatsApp.
+## Devis envoyé par e-mail
+À l'envoi d'une demande de devis (`devis.html` et formulaire de `index.html`), le
+récapitulatif est préparé pour l'e-mail du site : le site ouvre le logiciel de
+messagerie du visiteur avec un message déjà rédigé (type de bois, quantité, prix
+estimé, code postal, coordonnées, précisions), objet « Demande de devis - WoodEnergy ».
+Il ne reste au client qu'à cliquer sur « Envoyer » dans sa messagerie.
+L'adresse de destination est définie une seule fois dans `app.js` (`MAIL_TO`) :
+changez-la à cet endroit pour recevoir les demandes sur une autre boîte.
 Les demandes de type « Référencer mon activité » ou « Autre demande » restent
-enregistrées sur place, sans redirection.
+enregistrées sur place, sans ouverture de la messagerie.
+Le lien WhatsApp `https://wa.me/33744278770` reste disponible dans le pied de page
+et sur `contact.html` pour les visiteurs qui préfèrent la messagerie instantanée.
 
 ## Démonstration
 Prix, fournisseurs et coordonnées sont fictifs et fournis à titre d'exemple.

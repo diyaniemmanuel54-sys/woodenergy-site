@@ -21,20 +21,32 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  /* ========== WhatsApp : transmission du devis ========== */
-  const WA_PHONE = '33744278770';
-  const WA_URL = 'https://wa.me/' + WA_PHONE + '?text=';
-  function waQuoteLink(lines) {
-    return WA_URL + encodeURIComponent(lines.join('\n'));
+  /* ========== E-mail : transmission du devis ========== */
+  const MAIL_TO = 'EnergyWood@gmail.com';
+  const MAIL_SUBJECT = 'Demande de devis - WoodEnergy';
+  function mailQuoteLink(lines) {
+    return 'mailto:' + MAIL_TO +
+      '?subject=' + encodeURIComponent(MAIL_SUBJECT) +
+      '&body=' + encodeURIComponent(lines.join('\r\n'));
   }
-  // Ouvre WhatsApp dans un nouvel onglet ; bascule sur l'onglet courant si bloqué.
-  function waGoto(lines) {
-    const url = waQuoteLink(lines);
-    let w = null;
-    try { w = window.open(url, '_blank'); } catch (e) { w = null; }
-    if (w) { try { w.opener = null; } catch (e) {} return url; }
-    window.location.href = url;
-    return url;
+  // Ouvre le logiciel de messagerie du visiteur avec le récapitulatif pré-rempli.
+  function mailGoto(lines) {
+    const url = mailQuoteLink(lines);
+    let a = null;
+    try {
+      a = document.createElement('a');
+      a.href = url;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      return url;
+    } catch (e) {
+      window.location.href = url;
+      return url;
+    } finally {
+      if (a && a.parentNode) a.parentNode.removeChild(a);
+    }
   }
 
   /* ========== Prix dégressifs selon la quantité ========== */
@@ -164,7 +176,7 @@
             if (type === 'quote') {
               const q = store.get('we_quotes', []); q.unshift({ date: new Date().toISOString(), data });
               store.set('we_quotes', q);
-              // Transmission du récapitulatif sur WhatsApp
+              // Transmission du récapitulatif par e-mail
               const wl = ['Bonjour WoodEnergy,', 'voici ma demande de devis :', ''];
               if (data.besoin) wl.push('\u2022 Besoin : ' + data.besoin);
               if (data.cp) wl.push('\u2022 Code postal : ' + data.cp);
@@ -172,9 +184,10 @@
               if (data.email) wl.push('\u2022 E-mail : ' + data.email);
               if (data.tel) wl.push('\u2022 T\u00e9l\u00e9phone : ' + data.tel);
               if (data.message) wl.push('\u2022 Pr\u00e9cisions : ' + data.message);
+              wl.push('', 'Merci de me recontacter pour finaliser mon devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
               if (!/R\u00e9f\u00e9rencer|Autre demande/.test(String(data.besoin || ''))) {
-                note.textContent = 'Merci ! Votre demande de devis est pr\u00eate. WhatsApp s\'ouvre avec le r\u00e9capitulatif : il ne vous reste qu\'\u00e0 l\'envoyer.';
-                waGoto(wl);
+                note.textContent = 'Merci ! Votre demande de devis est pr\u00eate. Votre messagerie s\'ouvre avec le r\u00e9capitulatif adress\u00e9 \u00e0 ' + MAIL_TO + ' : il ne vous reste qu\'\u00e0 l\'envoyer.';
+                mailGoto(wl);
               }
             }
             if (type === 'avis') {
@@ -498,7 +511,7 @@
       list.unshift({ date: new Date().toISOString(), data: enriched });
       store.set('we_quotes', list);
 
-      /* --- Envoi du devis chiffré sur WhatsApp --- */
+      /* --- Envoi du devis chiffré par e-mail --- */
       const wl = ['Bonjour WoodEnergy,', 'voici ma demande de devis :', ''];
       wl.push('\u2022 Bois : ' + fz.label);
       wl.push('\u2022 Quantit\u00e9 : ' + (qN ? qN + ' ' + fz.pack : '\u00e0 pr\u00e9ciser'));
@@ -515,15 +528,16 @@
       if (state.email) wl.push('\u2022 E-mail : ' + state.email);
       if (state.tel) wl.push('\u2022 T\u00e9l\u00e9phone : ' + state.tel);
       if (state.message) wl.push('\u2022 Pr\u00e9cisions : ' + state.message);
+      wl.push('', 'Merci de me recontacter pour finaliser ce devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
 
       const note = $('#wzNote');
       if (note) {
-        note.textContent = 'Merci ! Votre demande a bien été enregistrée. Un fournisseur vous répondra sous 24 h ouvrées à l\'adresse ' + (state.email || '') + '. Référence conservée dans vos demandes. (Démonstration : enregistrée dans votre navigateur.)';
+        note.textContent = 'Merci ! Votre demande a bien été enregistrée. Un fournisseur vous répondra sous 24 h ouvrées à l\'adresse ' + (state.email || '') + '. Référence conservée dans vos demandes. (Démonstration : enregistrée dans votre navigateur.) Votre messagerie s\'ouvre avec le récapitulatif adressé à ' + MAIL_TO + ' : il ne vous reste qu\'à l\'envoyer.';
         note.className = 'form-note ok';
       } else {
         alert('Merci ! Votre demande de devis a bien été enregistrée.');
       }
-      waGoto(wl);
+      mailGoto(wl);
     });
     show(0);
   }
