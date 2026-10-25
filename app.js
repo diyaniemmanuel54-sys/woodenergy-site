@@ -27,34 +27,11 @@
   /* ========== E-mail : transmission du devis ========== */
   const MAIL_TO = 'EnergyWood@gmail.com';
   const MAIL_SUBJECT = 'Demande de devis - WoodEnergy';
-  // Relais d'envoi : la demande part directement depuis la page, sans passer par
-  // le logiciel de messagerie du visiteur (FormSubmit relaie vers MAIL_TO).
+  // Relais d'envoi : la demande part directement depuis la page vers MAIL_TO.
+  // Aucune application de messagerie n'est sollicitée sur l'appareil du visiteur.
   const FORM_ENDPOINT = 'https://formsubmit.co/ajax/' + MAIL_TO;
   const FORM_TIMEOUT = 20000;
-  function mailQuoteLink(lines) {
-    return 'mailto:' + MAIL_TO +
-      '?subject=' + encodeURIComponent(MAIL_SUBJECT) +
-      '&body=' + encodeURIComponent(lines.join('\r\n'));
-  }
-  // Ouvre le logiciel de messagerie du visiteur avec le récapitulatif pré-rempli.
-  function mailGoto(lines) {
-    const url = mailQuoteLink(lines);
-    let a = null;
-    try {
-      a = document.createElement('a');
-      a.href = url;
-      a.rel = 'noopener';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      return url;
-    } catch (e) {
-      window.location.href = url;
-      return url;
-    } finally {
-      if (a && a.parentNode) a.parentNode.removeChild(a);
-    }
-  }
+  const RETRY_TEXT = 'Votre demande n\'a pas pu \u00eatre envoy\u00e9e. Merci de r\u00e9essayer dans un instant, ou de nous appeler au ';
 
   // Envoie la demande au relais. Résout toujours : { ok:true } ou { ok:false, message }.
   function sendQuote(lines, fields) {
@@ -102,29 +79,21 @@
     });
   }
 
-  // Affiche l'état de l'envoi puis replie sur la messagerie si le relais échoue.
-  function transmitQuote(note, lines, fields, okText, btn) {
+  // Affiche l'état de l'envoi. En cas d'échec : message neutre, aucun envoi
+  // automatique, aucune fenêtre externe, les données saisies restent en place.
+  function transmitQuote(note, lines, fields, okText, btn, onOk) {
     const unlock = function () { if (btn) btn.disabled = false; };
-    if (note) { note.textContent = 'Envoi de votre demande à ' + MAIL_TO + '…'; note.className = 'form-note'; }
+    if (note) { note.textContent = 'Envoi de votre demande\u2026'; note.className = 'form-note'; }
     sendQuote(lines, fields).then(function (res) {
       unlock();
       if (res.ok) {
         if (note) { note.textContent = okText; note.className = 'form-note ok'; }
-        else { alert(okText); }
+        if (typeof onOk === 'function') onOk();
         return;
       }
-      const wa = 'https://wa.me/33744278770?text=' + encodeURIComponent(lines.join('\n'));
-      const fallback = 'L\'envoi automatique n\'a pas abouti (' + res.message + '). Votre messagerie s\'ouvre avec le récapitulatif adressé à ' +
-        MAIL_TO + ' : cliquez sur « Envoyer ». Vous pouvez aussi ';
-      if (note) {
-        note.className = 'form-note err';
-        note.innerHTML = esc(fallback) +
-          '<a href="' + wa + '" target="_blank" rel="noopener">envoyer le récapitulatif par WhatsApp</a> ou appeler le ' +
-          '<a href="tel:+33744278770">+33 7 44 27 87 70</a>.';
-      } else {
-        alert(fallback + 'envoyer le récapitulatif par WhatsApp (' + wa + ') ou appeler le +33 7 44 27 87 70.');
-      }
-      mailGoto(lines);
+      const msg = RETRY_TEXT +
+        '<a href="tel:+33744278770">+33 7 44 27 87 70</a>.';
+      if (note) { note.className = 'form-note err'; note.innerHTML = msg; }
     });
   }
 
@@ -297,21 +266,23 @@
         const done = (ok) => {
           if (submitBtn) submitBtn.disabled = false;
           if (!ok) {
-            note.textContent = 'Envoi impossible pour le moment. Vous pouvez nous \u00e9crire \u00e0 ' + MAIL_TO + ' ou nous appeler au +33 7 44 27 87 70.';
+            note.textContent = 'Votre message n\'a pas pu \u00eatre envoy\u00e9. Merci de r\u00e9essayer dans un instant, ou de nous appeler au +33 7 44 27 87 70.';
             note.className = 'form-note err';
             return;
           }
           saveLocally();
           if (type === 'quote') {
-            // Envoi direct au site, sans passer par la messagerie du visiteur.
+            // Envoi direct au site : la demande part de la page, rien ne s'ouvre sur
+            // l'appareil du visiteur. Le formulaire n'est vidé qu'en cas de succès.
             transmitQuote(note, shortQuoteLines(data), shortQuoteFields(data),
               'Merci' + (data.nom ? ' ' + data.nom : '') + ' ! Votre demande a bien \u00e9t\u00e9 envoy\u00e9e \u00e0 ' + MAIL_TO +
-              '. Nous vous r\u00e9pondons sous 24 h ouvr\u00e9es (pensez \u00e0 v\u00e9rifier vos spams).', submitBtn);
+              '. Nous vous r\u00e9pondons sous 24 h ouvr\u00e9es (pensez \u00e0 v\u00e9rifier vos spams).', submitBtn,
+              () => form.reset());
           } else {
             note.textContent = form.getAttribute('data-success') || 'Merci ! Votre message a bien \u00e9t\u00e9 envoy\u00e9.';
             note.className = 'form-note ok';
+            form.reset();
           }
-          form.reset();
         };
 
         if (endpoint && endpoint.indexOf('VOTRE_') === -1) {

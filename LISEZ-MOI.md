@@ -61,9 +61,10 @@ L'envoi passe par le relais gratuit FormSubmit, appelé en AJAX depuis `app.js` 
 - l'adresse de destination et donc le relais sont définis une seule fois dans
   `app.js` (`MAIL_TO`) : changez-la à cet endroit pour recevoir les demandes sur une
   autre boîte (pensez alors à réactiver le formulaire depuis la nouvelle adresse) ;
-- si le relais est indisponible (réseau, quota), la page le signale et propose un
-  repli : ouverture de la messagerie du visiteur avec le message pré-rempli, plus le
-  numéro de téléphone et WhatsApp.
+- si le relais est indisponible (réseau, quota), la page affiche un message neutre
+  (« Votre demande n'a pas pu être envoyée… ») avec le numéro de téléphone : aucun
+  envoi automatique, aucune fenêtre ni application externe ne s'ouvre, et les champs
+  saisis restent en place pour permettre un nouvel essai.
 Le lien WhatsApp `https://wa.me/33744278770` reste disponible dans le pied de page
 et sur `contact.html` pour les visiteurs qui préfèrent la messagerie instantanée.
 
