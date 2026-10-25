@@ -21,6 +21,9 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Article defini accorde a l'unite de vente : "le stere", "la tonne", "le m3".
+  const unitArticle = (u) => (u === 'tonne' ? 'la ' : 'le ') + u;
+
   /* ========== E-mail : transmission du devis ========== */
   const MAIL_TO = 'EnergyWood@gmail.com';
   const MAIL_SUBJECT = 'Demande de devis - WoodEnergy';
@@ -399,7 +402,7 @@
       const cD = $('#cDisc'); if (cD) cD.textContent = pct ? discLabel(pct) : 'aucune remise';
       $('#cCost').textContent = euro(Math.round(cost));
       const nt = nextTier(units);
-      $('#cNote').textContent = 'Base : ' + conso + ' kWh/m²/an (isolation ' + insul + '), appareil « ' + APPLIANCES[app].label + ' », prix ' + euro(f.pricePerUnit) + ' le ' + f.unit +
+      $('#cNote').textContent = 'Base : ' + conso + ' kWh/m²/an (isolation ' + insul + '), appareil « ' + APPLIANCES[app].label + ' », prix ' + euro(f.pricePerUnit) + ' ' + unitArticle(f.unit) +
         (pct ? ' avec ' + discLabel(pct) + ' de remise volume.' : '.') +
         (nt ? ' Dès ' + nt[0] + ' ' + f.pack + ' : ' + discLabel(nt[1]) + '.' : '');
       // mémorise pour le devis
@@ -472,7 +475,7 @@
       const rows = [
         ['Type de bois', f.label],
         ['Quantité souhaitée', qty ? qty + ' ' + f.pack : 'à préciser'],
-        ['Prix unitaire remisé', qty ? money(netUnit) + ' le ' + f.unit : '—'],
+        ['Prix unitaire remisé', qty ? money(netUnit) + ' ' + unitArticle(f.unit) : '—'],
         ['Remise volume', qty ? (pct ? discLabel(pct) : 'Aucune') : '—'],
         ['Palier suivant', qty ? (nt ? 'dès ' + nt[0] + ' : ' + discLabel(nt[1]) : 'Palier maximal atteint') : '—'],
         ['Budget indicatif', total ? money(total) : 'sur devis'],
@@ -517,7 +520,7 @@
       wl.push('\u2022 Quantit\u00e9 : ' + (qN ? qN + ' ' + fz.pack : '\u00e0 pr\u00e9ciser'));
       if (qN) {
         wl.push('\u2022 Prix estim\u00e9 : ' + money(enriched.total) +
-          ' (' + money(enriched.unitPrice) + ' le ' + fz.unit +
+          ' (' + money(enriched.unitPrice) + ' ' + unitArticle(fz.unit) +
           (enriched.pct ? ', remise ' + discLabel(enriched.pct) : '') + ')');
       }
       if (APPLIANCES[state.app]) wl.push('\u2022 Appareil : ' + APPLIANCES[state.app].label);
