@@ -27,6 +27,10 @@
   /* ========== E-mail : transmission du devis ========== */
   const MAIL_TO = 'EnergyWood@gmail.com';
   const MAIL_SUBJECT = 'Demande de devis - WoodEnergy';
+  // Relais d'envoi : la demande part directement depuis la page, sans passer par
+  // le logiciel de messagerie du visiteur (FormSubmit relaie vers MAIL_TO).
+  const FORM_ENDPOINT = 'https://formsubmit.co/ajax/' + MAIL_TO;
+  const FORM_TIMEOUT = 20000;
   function mailQuoteLink(lines) {
     return 'mailto:' + MAIL_TO +
       '?subject=' + encodeURIComponent(MAIL_SUBJECT) +
@@ -50,6 +54,78 @@
     } finally {
       if (a && a.parentNode) a.parentNode.removeChild(a);
     }
+  }
+
+  // Envoie la demande au relais. Résout toujours : { ok:true } ou { ok:false, message }.
+  function sendQuote(lines, fields) {
+    return new Promise(function (resolve) {
+      let settled = false;
+      const finish = function (v) { if (!settled) { settled = true; resolve(v); } };
+      const payload = Object.assign({
+        _subject: MAIL_SUBJECT + (fields && fields.Nom ? ' - ' + fields.Nom : ''),
+        _template: 'table',
+        _captcha: 'false',
+        'Recapitulatif': lines.join('\n')
+      }, fields || {});
+      if (!payload._replyto && payload.Email) payload._replyto = payload.Email;
+
+      let ctrl = null;
+      try { ctrl = new AbortController(); } catch (e) { ctrl = null; }
+      const timer = setTimeout(function () {
+        try { if (ctrl) ctrl.abort(); } catch (e) {}
+        finish({ ok: false, message: 'délai dépassé, connexion trop lente' });
+      }, FORM_TIMEOUT);
+
+      fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctrl ? ctrl.signal : undefined
+      }).then(function (r) {
+        return r.json().catch(function () { return null; }).then(function (j) {
+          clearTimeout(timer);
+          const ok = !!(j && (j.success === true || j.success === 'true'));
+          if (ok) { finish({ ok: true }); return; }
+          const raw = (j && j.message) ? String(j.message) : '';
+          let message = 'réponse inattendue du service d\'envoi';
+          if (/activat/i.test(raw)) message = 'formulaire en attente d\'activation côté site';
+          else if (/web server/i.test(raw)) message = 'envoi bloqué par le service';
+          else if (/limit|quota|too many/i.test(raw)) message = 'quota du service d\'envoi atteint';
+          // détail technique : utile au propriétaire du site, invisible pour le visiteur
+          try { console.warn('[WoodEnergy] relais e-mail :', raw || ('HTTP ' + r.status)); } catch (e) {}
+          finish({ ok: false, message: message });
+        });
+      }).catch(function (err) {
+        clearTimeout(timer);
+        finish({ ok: false, message: (err && err.name === 'AbortError') ? 'délai dépassé' : 'connexion au service d\'envoi impossible' });
+      });
+    });
+  }
+
+  // Affiche l'état de l'envoi puis replie sur la messagerie si le relais échoue.
+  function transmitQuote(note, lines, fields, okText, btn) {
+    const unlock = function () { if (btn) btn.disabled = false; };
+    if (note) { note.textContent = 'Envoi de votre demande à ' + MAIL_TO + '…'; note.className = 'form-note'; }
+    sendQuote(lines, fields).then(function (res) {
+      unlock();
+      if (res.ok) {
+        if (note) { note.textContent = okText; note.className = 'form-note ok'; }
+        else { alert(okText); }
+        return;
+      }
+      const wa = 'https://wa.me/33744278770?text=' + encodeURIComponent(lines.join('\n'));
+      const fallback = 'L\'envoi automatique n\'a pas abouti (' + res.message + '). Votre messagerie s\'ouvre avec le récapitulatif adressé à ' +
+        MAIL_TO + ' : cliquez sur « Envoyer ». Vous pouvez aussi ';
+      if (note) {
+        note.className = 'form-note err';
+        note.innerHTML = esc(fallback) +
+          '<a href="' + wa + '" target="_blank" rel="noopener">envoyer le récapitulatif par WhatsApp</a> ou appeler le ' +
+          '<a href="tel:+33744278770">+33 7 44 27 87 70</a>.';
+      } else {
+        alert(fallback + 'envoyer le récapitulatif par WhatsApp (' + wa + ') ou appeler le +33 7 44 27 87 70.');
+      }
+      mailGoto(lines);
+    });
   }
 
   /* ========== Prix dégressifs selon la quantité ========== */
@@ -160,6 +236,29 @@
     if (first) first.focus();
     return ok;
   }
+  // Récapitulatif texte du formulaire court (index.html, contact.html).
+  function shortQuoteLines(d) {
+    const wl = ['Bonjour WoodEnergy,', 'voici ma demande de devis :', ''];
+    if (d.nom) wl.push('\u2022 Nom : ' + d.nom);
+    if (d.email) wl.push('\u2022 E-mail : ' + d.email);
+    if (d.tel) wl.push('\u2022 T\u00e9l\u00e9phone : ' + d.tel);
+    if (d.cp) wl.push('\u2022 Code postal : ' + d.cp);
+    if (d.besoin) wl.push('\u2022 Besoin : ' + d.besoin);
+    if (d.message) wl.push('\u2022 Pr\u00e9cisions : ' + d.message);
+    wl.push('', 'Merci de me recontacter pour finaliser mon devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
+    return wl;
+  }
+  function shortQuoteFields(d) {
+    return {
+      Nom: d.nom || '',
+      Email: d.email || '',
+      Telephone: d.tel || '',
+      'Code postal': d.cp || '',
+      Besoin: d.besoin || '',
+      Precisions: d.message || ''
+    };
+  }
+
   function initForms() {
     $$('form.js-form').forEach((form) => {
       form.addEventListener('submit', (e) => {
@@ -167,56 +266,60 @@
         const note = $('.form-note', form) || (() => {
           const p = document.createElement('p'); p.className = 'form-note'; form.appendChild(p); return p;
         })();
+        const submitBtn = $('button[type="submit"]', form);
+        if (submitBtn && submitBtn.disabled) return;   // envoi déjà en cours
         if (!validate(form)) { note.textContent = 'Merci de corriger les champs en rouge.'; note.className = 'form-note err'; return; }
         const data = Object.fromEntries(new FormData(form).entries());
         const endpoint = form.getAttribute('data-endpoint');
-        note.textContent = 'Envoi en cours…'; note.className = 'form-note';
-        const done = (ok) => {
-          if (ok) {
-            note.textContent = form.getAttribute('data-success') || 'Merci ! Votre message a bien été envoyé.';
-            note.className = 'form-note ok';
-            const type = form.getAttribute('data-save');
-            if (type === 'quote') {
-              const q = store.get('we_quotes', []); q.unshift({ date: new Date().toISOString(), data });
-              store.set('we_quotes', q);
-              // Transmission du récapitulatif par e-mail
-              const wl = ['Bonjour WoodEnergy,', 'voici ma demande de devis :', ''];
-              if (data.besoin) wl.push('\u2022 Besoin : ' + data.besoin);
-              if (data.cp) wl.push('\u2022 Code postal : ' + data.cp);
-              if (data.nom) wl.push('\u2022 Nom : ' + data.nom);
-              if (data.email) wl.push('\u2022 E-mail : ' + data.email);
-              if (data.tel) wl.push('\u2022 T\u00e9l\u00e9phone : ' + data.tel);
-              if (data.message) wl.push('\u2022 Pr\u00e9cisions : ' + data.message);
-              wl.push('', 'Merci de me recontacter pour finaliser mon devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
-              if (!/R\u00e9f\u00e9rencer|Autre demande/.test(String(data.besoin || ''))) {
-                note.textContent = 'Merci ! Votre demande de devis est pr\u00eate. Votre messagerie s\'ouvre avec le r\u00e9capitulatif adress\u00e9 \u00e0 ' + MAIL_TO + ' : il ne vous reste qu\'\u00e0 l\'envoyer.';
-                mailGoto(wl);
-              }
-            }
-            if (type === 'avis') {
-              const a = store.get('we_avis', []); a.unshift({ date: new Date().toISOString(), data });
-              store.set('we_avis', a);
-            }
-            if (type === 'newsletter') {
-              const n = store.get('we_newsletter', []); n.unshift({ date: new Date().toISOString(), email: data.email || '' });
-              store.set('we_newsletter', n);
-            }
-            if (type === 'pro') {
-              const pr = store.get('we_pro', []); pr.unshift({ date: new Date().toISOString(), data });
-              store.set('we_pro', pr);
-            }
-            form.reset();
-          } else {
-            note.textContent = 'Envoi impossible pour le moment. Vous pouvez nous écrire à EnergyWood@gmail.com.';
-            note.className = 'form-note err';
+        const type = form.getAttribute('data-save');
+        note.textContent = 'Envoi en cours\u2026'; note.className = 'form-note';
+        if (submitBtn) submitBtn.disabled = true;
+
+        const saveLocally = () => {
+          if (type === 'quote') {
+            const q = store.get('we_quotes', []); q.unshift({ date: new Date().toISOString(), data });
+            store.set('we_quotes', q);
+          }
+          if (type === 'avis') {
+            const a = store.get('we_avis', []); a.unshift({ date: new Date().toISOString(), data });
+            store.set('we_avis', a);
+          }
+          if (type === 'newsletter') {
+            const n = store.get('we_newsletter', []); n.unshift({ date: new Date().toISOString(), email: data.email || '' });
+            store.set('we_newsletter', n);
+          }
+          if (type === 'pro') {
+            const pr = store.get('we_pro', []); pr.unshift({ date: new Date().toISOString(), data });
+            store.set('we_pro', pr);
           }
         };
+
+        const done = (ok) => {
+          if (submitBtn) submitBtn.disabled = false;
+          if (!ok) {
+            note.textContent = 'Envoi impossible pour le moment. Vous pouvez nous \u00e9crire \u00e0 ' + MAIL_TO + ' ou nous appeler au +33 7 44 27 87 70.';
+            note.className = 'form-note err';
+            return;
+          }
+          saveLocally();
+          if (type === 'quote') {
+            // Envoi direct au site, sans passer par la messagerie du visiteur.
+            transmitQuote(note, shortQuoteLines(data), shortQuoteFields(data),
+              'Merci' + (data.nom ? ' ' + data.nom : '') + ' ! Votre demande a bien \u00e9t\u00e9 envoy\u00e9e \u00e0 ' + MAIL_TO +
+              '. Nous vous r\u00e9pondons sous 24 h ouvr\u00e9es (pensez \u00e0 v\u00e9rifier vos spams).', submitBtn);
+          } else {
+            note.textContent = form.getAttribute('data-success') || 'Merci ! Votre message a bien \u00e9t\u00e9 envoy\u00e9.';
+            note.className = 'form-note ok';
+          }
+          form.reset();
+        };
+
         if (endpoint && endpoint.indexOf('VOTRE_') === -1) {
           fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
             .then((r) => done(r.ok)).catch(() => done(false));
         } else {
           console.log('[WoodEnergy] formulaire', form.id || form.className, data);
-          setTimeout(() => done(true), 350);
+          setTimeout(() => done(true), 250);
         }
       });
     });
@@ -501,7 +604,24 @@
     const form = $('#wzForm');
     if (form) form.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (!validate(form)) return;
+      const submitBtn = $('#wzSubmit') || $('button[type="submit"]', form);
+      if (submitBtn && submitBtn.disabled) return;   // envoi déjà en cours
+      if (!validate(form)) {
+        // champ obligatoire manquant : on l'explique et on revient à l'étape concernée
+        const bad = $('.invalid', form);
+        const noteEl = $('#wzNote');
+        if (noteEl) {
+          noteEl.textContent = 'Merci de compléter les champs obligatoires' + (bad && bad.labels && bad.labels[0] ? ' (' + bad.labels[0].textContent.trim().toLowerCase() + ')' : '') + ' avant l\'envoi.';
+          noteEl.className = 'form-note err';
+        }
+        if (bad) {
+          const st = bad.closest('.wz-step');
+          const idx = st ? steps.indexOf(st) : -1;
+          if (idx > -1) show(idx);
+          try { bad.focus(); } catch (e) {}
+        }
+        return;
+      }
       collect();
       const list = store.get('we_quotes', []);
       const fz = FUELS[state.fuel] || FUELS.buches;
@@ -533,14 +653,26 @@
       if (state.message) wl.push('\u2022 Pr\u00e9cisions : ' + state.message);
       wl.push('', 'Merci de me recontacter pour finaliser ce devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
 
+      const fields = {
+        Nom: state.nom || '',
+        Email: state.email || '',
+        Telephone: state.tel || '',
+        Bois: fz.label,
+        Quantite: (qN ? qN + ' ' + fz.pack : '\u00e0 pr\u00e9ciser'),
+        'Prix estime': (qN ? money(enriched.total) : 'sur devis'),
+        Appareil: APPLIANCES[state.app] ? APPLIANCES[state.app].label : '',
+        'Code postal': state.cp || '',
+        Delai: state.delai || '',
+        Fournisseur: (state.supplier ? ((bySlug(state.supplier) || {}).name || state.supplier) : 'peu importe, le plus proche'),
+        Precisions: state.message || ''
+      };
+
+      // Envoi direct au site depuis la page : aucun logiciel de messagerie requis.
       const note = $('#wzNote');
-      if (note) {
-        note.textContent = 'Merci ! Votre demande a bien été enregistrée. Un fournisseur vous répondra sous 24 h ouvrées à l\'adresse ' + (state.email || '') + '. Référence conservée dans vos demandes. (Démonstration : enregistrée dans votre navigateur.) Votre messagerie s\'ouvre avec le récapitulatif adressé à ' + MAIL_TO + ' : il ne vous reste qu\'à l\'envoyer.';
-        note.className = 'form-note ok';
-      } else {
-        alert('Merci ! Votre demande de devis a bien été enregistrée.');
-      }
-      mailGoto(wl);
+      const okText = 'Merci' + (state.nom ? ' ' + state.nom : '') + ' ! Votre demande de devis a bien \u00e9t\u00e9 envoy\u00e9e \u00e0 ' + MAIL_TO +
+        (state.email ? '. Un fournisseur vous r\u00e9pond sous 24 h ouvr\u00e9es \u00e0 l\'adresse ' + state.email : '') +
+        '. Le r\u00e9capitulatif reste affich\u00e9 ci-dessus et dans vos demandes.';
+      transmitQuote(note, wl, fields, okText, submitBtn);
     });
     show(0);
   }

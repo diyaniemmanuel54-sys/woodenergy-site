@@ -44,16 +44,26 @@ enregistrer une commande de démonstration (`we_orders`) ou convertir le panier 
 demande de devis (`we_quotes`). Pour changer les paliers, modifiez `TIERS` dans
 `build.py` puis relancez le générateur.
 
-## Devis envoyé par e-mail
-À l'envoi d'une demande de devis (`devis.html` et formulaire de `index.html`), le
-récapitulatif est préparé pour l'e-mail du site : le site ouvre le logiciel de
-messagerie du visiteur avec un message déjà rédigé (type de bois, quantité, prix
-estimé, code postal, coordonnées, précisions), objet « Demande de devis - WoodEnergy ».
-Il ne reste au client qu'à cliquer sur « Envoyer » dans sa messagerie.
-L'adresse de destination est définie une seule fois dans `app.js` (`MAIL_TO`) :
-changez-la à cet endroit pour recevoir les demandes sur une autre boîte.
-Les demandes de type « Référencer mon activité » ou « Autre demande » restent
-enregistrées sur place, sans ouverture de la messagerie.
+## Devis envoyé par e-mail (envoi direct)
+À l'envoi d'une demande de devis (`devis.html`, formulaire de `index.html` et de
+`contact.html`), le récapitulatif (type de bois, quantité, prix estimé, code postal,
+coordonnées, précisions) est envoyé **directement à EnergyWood@gmail.com depuis la
+page**, sans logiciel de messagerie côté visiteur. Le client voit « Envoi en cours… »
+puis un message de confirmation, et la demande reste aussi consultable dans son
+espace (`compte.html`).
+
+L'envoi passe par le relais gratuit FormSubmit, appelé en AJAX depuis `app.js` :
+`FORM_ENDPOINT = 'https://formsubmit.co/ajax/' + MAIL_TO`. Points à connaître :
+
+- à la **première** demande envoyée, FormSubmit adresse un e-mail d'activation à
+  `EnergyWood@gmail.com` : il faut cliquer une seule fois sur « Activate Form »,
+  sinon les demandes suivantes ne sont pas transmises ;
+- l'adresse de destination et donc le relais sont définis une seule fois dans
+  `app.js` (`MAIL_TO`) : changez-la à cet endroit pour recevoir les demandes sur une
+  autre boîte (pensez alors à réactiver le formulaire depuis la nouvelle adresse) ;
+- si le relais est indisponible (réseau, quota), la page le signale et propose un
+  repli : ouverture de la messagerie du visiteur avec le message pré-rempli, plus le
+  numéro de téléphone et WhatsApp.
 Le lien WhatsApp `https://wa.me/33744278770` reste disponible dans le pied de page
 et sur `contact.html` pour les visiteurs qui préfèrent la messagerie instantanée.
 
