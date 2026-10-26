@@ -24,77 +24,56 @@
   // Article defini accorde a l'unite de vente : "le stere", "la tonne", "le m3".
   const unitArticle = (u) => (u === 'tonne' ? 'la ' : 'le ') + u;
 
-  /* ========== E-mail : transmission du devis ========== */
+  /* ========== E-mail : le client envoie lui-meme son recapitulatif ========== */
   const MAIL_TO = 'maxbarrett892@gmail.com';
   const MAIL_SUBJECT = 'Demande de devis - WoodEnergy';
-  // Relais d'envoi : la demande part directement depuis la page vers MAIL_TO.
-  // Aucune application de messagerie n'est sollicitée sur l'appareil du visiteur.
-  const FORM_ENDPOINT = 'https://formsubmit.co/ajax/' + MAIL_TO;
-  const FORM_TIMEOUT = 20000;
-  const RETRY_TEXT = 'Votre demande n\'a pas pu \u00eatre envoy\u00e9e. Merci de r\u00e9essayer dans un instant, ou de nous appeler au ';
+  // Aucun envoi automatique : le site ne transmet rien. Il ouvre uniquement le
+  // logiciel de messagerie du visiteur avec le recapitulatif deja redige ; c'est
+  // le client qui clique sur « Envoyer » depuis sa propre boite mail.
+  const MAIL_PHONE = '+33 7 44 27 87 70';
+  const MAIL_PHONE_HREF = 'tel:+33744278770';
 
-  // Envoie la demande au relais. Résout toujours : { ok:true } ou { ok:false, message }.
-  function sendQuote(lines, fields) {
-    return new Promise(function (resolve) {
-      let settled = false;
-      const finish = function (v) { if (!settled) { settled = true; resolve(v); } };
-      const payload = Object.assign({
-        _subject: MAIL_SUBJECT + (fields && fields.Nom ? ' - ' + fields.Nom : ''),
-        _template: 'table',
-        _captcha: 'false',
-        'Recapitulatif': lines.join('\n')
-      }, fields || {});
-      if (!payload._replyto && payload.Email) payload._replyto = payload.Email;
-
-      let ctrl = null;
-      try { ctrl = new AbortController(); } catch (e) { ctrl = null; }
-      const timer = setTimeout(function () {
-        try { if (ctrl) ctrl.abort(); } catch (e) {}
-        finish({ ok: false, message: 'délai dépassé, connexion trop lente' });
-      }, FORM_TIMEOUT);
-
-      fetch(FORM_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
-        signal: ctrl ? ctrl.signal : undefined
-      }).then(function (r) {
-        return r.json().catch(function () { return null; }).then(function (j) {
-          clearTimeout(timer);
-          const ok = !!(j && (j.success === true || j.success === 'true'));
-          if (ok) { finish({ ok: true }); return; }
-          const raw = (j && j.message) ? String(j.message) : '';
-          let message = 'réponse inattendue du service d\'envoi';
-          if (/activat/i.test(raw)) message = 'formulaire en attente d\'activation côté site';
-          else if (/web server/i.test(raw)) message = 'envoi bloqué par le service';
-          else if (/limit|quota|too many/i.test(raw)) message = 'quota du service d\'envoi atteint';
-          // détail technique : utile au propriétaire du site, invisible pour le visiteur
-          try { console.warn('[WoodEnergy] relais e-mail :', raw || ('HTTP ' + r.status)); } catch (e) {}
-          finish({ ok: false, message: message });
-        });
-      }).catch(function (err) {
-        clearTimeout(timer);
-        finish({ ok: false, message: (err && err.name === 'AbortError') ? 'délai dépassé' : 'connexion au service d\'envoi impossible' });
-      });
-    });
+  // Lien mailto complet : destinataire, objet et corps du message.
+  function mailQuoteLink(lines) {
+    return 'mailto:' + MAIL_TO +
+      '?subject=' + encodeURIComponent(MAIL_SUBJECT) +
+      '&body=' + encodeURIComponent(lines.join('\r\n'));
   }
 
-  // Affiche l'état de l'envoi. En cas d'échec : message neutre, aucun envoi
-  // automatique, aucune fenêtre externe, les données saisies restent en place.
-  function transmitQuote(note, lines, fields, okText, btn, onOk) {
-    const unlock = function () { if (btn) btn.disabled = false; };
-    if (note) { note.textContent = 'Envoi de votre demande\u2026'; note.className = 'form-note'; }
-    sendQuote(lines, fields).then(function (res) {
-      unlock();
-      if (res.ok) {
-        if (note) { note.textContent = okText; note.className = 'form-note ok'; }
-        if (typeof onOk === 'function') onOk();
-        return;
-      }
-      const msg = RETRY_TEXT +
-        '<a href="tel:+33744278770">+33 7 44 27 87 70</a>.';
-      if (note) { note.className = 'form-note err'; note.innerHTML = msg; }
-    });
+  // Ouvre la messagerie du visiteur sur le message pre-rempli.
+  // Retourne true si le lien a pu etre declenche.
+  function mailGoto(lines) {
+    const url = mailQuoteLink(lines);
+    let a = null;
+    try {
+      a = document.createElement('a');
+      a.href = url;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      return true;
+    } catch (e) {
+      try { window.location.href = url; return true; } catch (e2) { return false; }
+    } finally {
+      if (a && a.parentNode) a.parentNode.removeChild(a);
+    }
+  }
+
+  // Ouvre le brouillon dans la messagerie du client puis lui indique la derniere
+  // etape : cliquer sur « Envoyer ». Rien n'est envoye depuis la page.
+  // Ouvre le brouillon dans la messagerie du client puis lui indique la dernière
+  // étape : cliquer sur « Envoyer ». Rien n'est envoyé depuis la page.
+  function openMailDraft(note, lines, okText, btn) {
+    if (btn) btn.disabled = false;
+    const opened = mailGoto(lines);
+    const msg = okText || ('Votre logiciel de messagerie s\'ouvre avec le récapitulatif adressé à ' +
+      MAIL_TO + ' : il vous reste à cliquer sur « Envoyer » depuis votre messagerie.');
+    if (!note) { if (!opened) window.alert(msg); return; }
+    note.className = opened ? 'form-note ok' : 'form-note err';
+    note.innerHTML = esc(msg) + (opened ? '' :
+      ' Aucune messagerie détectée sur cet appareil : écrivez à <a href="mailto:' + MAIL_TO + '">' +
+      MAIL_TO + '</a> ou appelez le <a href="' + MAIL_PHONE_HREF + '">' + MAIL_PHONE + '</a>.');
   }
 
   /* ========== Prix dégressifs selon la quantité ========== */
@@ -214,7 +193,7 @@
     if (d.cp) wl.push('\u2022 Code postal : ' + d.cp);
     if (d.besoin) wl.push('\u2022 Besoin : ' + d.besoin);
     if (d.message) wl.push('\u2022 Pr\u00e9cisions : ' + d.message);
-    wl.push('', 'Merci de me recontacter pour finaliser mon devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
+    wl.push('', 'Merci de me recontacter pour finaliser mon devis.', 'Demande pr\u00e9par\u00e9e depuis woodenergyfr.com');
     return wl;
   }
   function shortQuoteFields(d) {
@@ -241,7 +220,7 @@
         const data = Object.fromEntries(new FormData(form).entries());
         const endpoint = form.getAttribute('data-endpoint');
         const type = form.getAttribute('data-save');
-        note.textContent = 'Envoi en cours\u2026'; note.className = 'form-note';
+        note.textContent = type === 'quote' ? 'Ouverture de votre messagerie\u2026' : 'Envoi en cours\u2026';
         if (submitBtn) submitBtn.disabled = true;
 
         const saveLocally = () => {
@@ -271,19 +250,23 @@
             return;
           }
           saveLocally();
-          if (type === 'quote') {
-            // Envoi direct au site : la demande part de la page, rien ne s'ouvre sur
-            // l'appareil du visiteur. Le formulaire n'est vidé qu'en cas de succès.
-            transmitQuote(note, shortQuoteLines(data), shortQuoteFields(data),
-              'Merci' + (data.nom ? ' ' + data.nom : '') + ' ! Votre demande a bien \u00e9t\u00e9 envoy\u00e9e \u00e0 ' + MAIL_TO +
-              '. Nous vous r\u00e9pondons sous 24 h ouvr\u00e9es (pensez \u00e0 v\u00e9rifier vos spams).', submitBtn,
-              () => form.reset());
-          } else {
-            note.textContent = form.getAttribute('data-success') || 'Merci ! Votre message a bien \u00e9t\u00e9 envoy\u00e9.';
-            note.className = 'form-note ok';
-            form.reset();
-          }
+          note.textContent = form.getAttribute('data-success') || 'Merci ! Votre message a bien \u00e9t\u00e9 envoy\u00e9.';
+          note.className = 'form-note ok';
+          form.reset();
         };
+
+        if (type === 'quote') {
+          // Aucun envoi depuis le site : on ouvre la messagerie du visiteur avec
+          // le récapitulatif déjà rédigé, il ne reste qu'à cliquer sur « Envoyer ».
+          saveLocally();
+          openMailDraft(note, shortQuoteLines(data),
+            'Merci' + (data.nom ? ' ' + data.nom : '') +
+            ' ! Votre récapitulatif s\'ouvre dans votre logiciel de messagerie, adressé à ' + MAIL_TO +
+            '. Il vous reste à cliquer sur « Envoyer » depuis votre messagerie : ' +
+            'rien n\'est envoyé depuis cette page.', submitBtn);
+          form.reset();
+          return;
+        }
 
         if (endpoint && endpoint.indexOf('VOTRE_') === -1) {
           fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
@@ -622,28 +605,16 @@
       if (state.email) wl.push('\u2022 E-mail : ' + state.email);
       if (state.tel) wl.push('\u2022 T\u00e9l\u00e9phone : ' + state.tel);
       if (state.message) wl.push('\u2022 Pr\u00e9cisions : ' + state.message);
-      wl.push('', 'Merci de me recontacter pour finaliser ce devis.', 'Demande envoy\u00e9e depuis woodenergyfr.com');
+      wl.push('', 'Merci de me recontacter pour finaliser ce devis.', 'Demande pr\u00e9par\u00e9e depuis woodenergyfr.com');
 
-      const fields = {
-        Nom: state.nom || '',
-        Email: state.email || '',
-        Telephone: state.tel || '',
-        Bois: fz.label,
-        Quantite: (qN ? qN + ' ' + fz.pack : '\u00e0 pr\u00e9ciser'),
-        'Prix estime': (qN ? money(enriched.total) : 'sur devis'),
-        Appareil: APPLIANCES[state.app] ? APPLIANCES[state.app].label : '',
-        'Code postal': state.cp || '',
-        Delai: state.delai || '',
-        Fournisseur: (state.supplier ? ((bySlug(state.supplier) || {}).name || state.supplier) : 'peu importe, le plus proche'),
-        Precisions: state.message || ''
-      };
-
-      // Envoi direct au site depuis la page : aucun logiciel de messagerie requis.
+      // Aucun envoi depuis le site : le récapitulatif est remis au logiciel de
+      // messagerie du visiteur, qui n'a plus qu'à cliquer sur « Envoyer ».
       const note = $('#wzNote');
-      const okText = 'Merci' + (state.nom ? ' ' + state.nom : '') + ' ! Votre demande de devis a bien \u00e9t\u00e9 envoy\u00e9e \u00e0 ' + MAIL_TO +
-        (state.email ? '. Un fournisseur vous r\u00e9pond sous 24 h ouvr\u00e9es \u00e0 l\'adresse ' + state.email : '') +
-        '. Le r\u00e9capitulatif reste affich\u00e9 ci-dessus et dans vos demandes.';
-      transmitQuote(note, wl, fields, okText, submitBtn);
+      const okText = 'Merci' + (state.nom ? ' ' + state.nom : '') +
+        ' ! Votre récapitulatif est prêt dans votre logiciel de messagerie, adressé à ' + MAIL_TO +
+        '. Il vous reste à cliquer sur « Envoyer » : c\'est votre messagerie qui transmet la demande, ' +
+        'rien n\'est envoyé depuis cette page.';
+      openMailDraft(note, wl, okText, submitBtn);
     });
     show(0);
   }

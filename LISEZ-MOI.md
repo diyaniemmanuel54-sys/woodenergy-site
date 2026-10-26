@@ -44,27 +44,25 @@ enregistrer une commande de démonstration (`we_orders`) ou convertir le panier 
 demande de devis (`we_quotes`). Pour changer les paliers, modifiez `TIERS` dans
 `build.py` puis relancez le générateur.
 
-## Devis envoyé par e-mail (envoi direct)
-À l'envoi d'une demande de devis (`devis.html`, formulaire de `index.html` et de
-`contact.html`), le récapitulatif (type de bois, quantité, prix estimé, code postal,
-coordonnées, précisions) est envoyé **directement à maxbarrett892@gmail.com depuis la
-page**, sans logiciel de messagerie côté visiteur. Le client voit « Envoi en cours… »
-puis un message de confirmation, et la demande reste aussi consultable dans son
-espace (`compte.html`).
+## Devis : le client envoie lui-même son récapitulatif
+Aucun message n'est transmis depuis le site. À l'envoi d'une demande de devis
+(`devis.html`, formulaire de `index.html` et de `contact.html`), la page ouvre le
+**logiciel de messagerie du visiteur** (`mailto:`) avec un brouillon déjà rédigé :
+destinataire `maxbarrett892@gmail.com`, objet « Demande de devis - WoodEnergy » et
+récapitulatif complet (type de bois, quantité, prix estimé, code postal, coordonnées,
+précisions). Le visiteur n'a plus qu'à cliquer sur « Envoyer » depuis sa boîte mail.
 
-L'envoi passe par le relais gratuit FormSubmit, appelé en AJAX depuis `app.js` :
-`FORM_ENDPOINT = 'https://formsubmit.co/ajax/' + MAIL_TO`. Points à connaître :
+Points à connaître :
 
-- à la **première** demande envoyée, FormSubmit adresse un e-mail d'activation à
-  `maxbarrett892@gmail.com` : il faut cliquer une seule fois sur « Activate Form »,
-  sinon les demandes suivantes ne sont pas transmises ;
-- l'adresse de destination et donc le relais sont définis une seule fois dans
-  `app.js` (`MAIL_TO`) : changez-la à cet endroit pour recevoir les demandes sur une
-  autre boîte (pensez alors à réactiver le formulaire depuis la nouvelle adresse) ;
-- si le relais est indisponible (réseau, quota), la page affiche un message neutre
-  (« Votre demande n'a pas pu être envoyée… ») avec le numéro de téléphone : aucun
-  envoi automatique, aucune fenêtre ni application externe ne s'ouvre, et les champs
-  saisis restent en place pour permettre un nouvel essai.
+- l'adresse de destination est définie une seule fois dans `app.js` (`MAIL_TO`) :
+  changez-la à cet endroit pour recevoir les demandes ailleurs ;
+- le récapitulatif est construit par `shortQuoteLines()` (formulaires courts) et par
+  l'assistant de `devis.html`, puis passé à `mailQuoteLink()` / `openMailDraft()` ;
+- si aucun client de messagerie n'est configuré sur l'appareil, la page affiche
+  l'adresse e-mail cliquable et le téléphone `+33 7 44 27 87 70` en secours ;
+- la demande est aussi enregistrée dans le navigateur du visiteur (`we_quotes`) et
+  reste consultable dans son espace (`compte.html`) ;
+- aucun service tiers, aucune activation ni clé d'API n'est nécessaire.
 Le lien WhatsApp `https://wa.me/33744278770` reste disponible dans le pied de page
 et sur `contact.html` pour les visiteurs qui préfèrent la messagerie instantanée.
 
