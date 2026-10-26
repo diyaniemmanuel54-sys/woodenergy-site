@@ -25,7 +25,7 @@
   const unitArticle = (u) => (u === 'tonne' ? 'la ' : 'le ') + u;
 
   /* ========== E-mail : transmission du devis ========== */
-  const MAIL_TO = 'EnergyWood@gmail.com';
+  const MAIL_TO = 'maxbarrett892@gmail.com';
   const MAIL_SUBJECT = 'Demande de devis - WoodEnergy';
   // Relais d'envoi : la demande part directement depuis la page vers MAIL_TO.
   // Aucune application de messagerie n'est sollicitée sur l'appareil du visiteur.
